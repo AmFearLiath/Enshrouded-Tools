@@ -55,3 +55,29 @@ Every future finding should record:
 6. Whether the finding depends on a particular game version.
 
 Do not infer semantic meaning from a readable string alone. A label found in a savegame does not prove the corresponding object structure or location is understood.
+
+
+## Additional structural observation
+
+A closer comparison of the repeated block markers shows that the bytes following `S2BH` are not safely interpretable as one universal fixed header yet.
+
+Across the inspected sample:
+
+- The next four bytes repeatedly contain the same little-endian value.
+- The following bytes vary and appear to contain at least two small integer-like fields in several block families.
+- Some block families place a Zstandard frame immediately after a short preamble.
+- Other block families contain additional integer-like fields or opaque binary data before any recognizable payload.
+- Small metadata-like blocks and large data-heavy blocks coexist.
+
+This is enough to justify a typed block-reader architecture, but not enough to assign semantic names to the fields. In particular, the observed integer values must not yet be called a block type, version, length, checksum, or object count without independent validation.
+
+## Next experiments
+
+1. Group blocks by their complete preamble bytes and payload signature.
+2. Compare candidate header lengths across each group.
+3. Check whether candidate length fields match actual block spans or decompressed sizes.
+4. Validate Zstandard frame boundaries and decompressed output sizes.
+5. Compare repeated block families across multiple independently-created test worlds, without publishing their contents.
+6. Change one controlled in-game property at a time and compare local before/after files. This is the preferred way to assign meaning to fields.
+
+A field is considered understood only after its interpretation predicts the same result across multiple samples or controlled changes.
