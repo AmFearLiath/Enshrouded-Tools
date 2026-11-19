@@ -81,3 +81,52 @@ This is enough to justify a typed block-reader architecture, but not enough to a
 6. Change one controlled in-game property at a time and compare local before/after files. This is the preferred way to assign meaning to fields.
 
 A field is considered understood only after its interpretation predicts the same result across multiple samples or controlled changes.
+
+
+## Header field grouping from the local world sample
+
+A byte-level comparison of all 20 `S2BH` occurrences in the local sample shows a repeated 12-byte prefix:
+
+| Relative offset | Width | Observation |
+|---:|---:|---|
+| 0 | 4 bytes | ASCII marker `S2BH` |
+| 4 | 4 bytes | `02 00 00 00` in all 20 occurrences |
+| 8 | 2 bytes | Varies by block family |
+| 10 | 2 bytes | Varies by block family |
+
+The two 16-bit values at relative offsets 8 and 10 form useful grouping keys. Their meaning is not yet known, so the implementation should call them raw fields rather than type IDs until confirmed.
+
+Observed raw field pairs (little-endian unsigned 16-bit values) include:
+
+| Field A | Field B | Occurrences |
+|---:|---:|---:|
+| 2 | 2 | 10 |
+| 3 | 1 | 1 |
+| 4 | 2 | 1 |
+| 5 | 1 | 1 |
+| 6 | 100 | 1 |
+| 7 | 1 | 1 |
+| 8 | 1 | 1 |
+| 11 | 2 | 1 |
+| 12 | 3 | 1 |
+| 13 | 1 | 1 |
+| 14 | 1 | 1 |
+| 3 | 21 | 1 |
+
+The repeated value at relative offset 4 may be a format/version field, but this is only a hypothesis. It must be compared with other game versions before assigning that meaning.
+
+### Zstandard placement
+
+For the three directly observed Zstandard frames, the frame magic begins 14 bytes after the corresponding `S2BH` marker. This suggests a 14-byte preamble for those particular blocks:
+
+- 4-byte marker
+- 4-byte repeated value
+- 2-byte field A
+- 2-byte field B
+- 2 additional bytes before the Zstandard frame
+
+This does **not** prove that all block families use a 14-byte header. Other block families need separate boundary and payload analysis.
+
+### Important correction to the scanner model
+
+The scanner's current candidate spans are only ranges between consecutive marker occurrences. They must not yet be treated as confirmed top-level block lengths. A future parser should first validate the container-level index/table and each block's own declared boundaries, if present.
