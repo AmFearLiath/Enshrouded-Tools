@@ -65,7 +65,7 @@ def inspect_bytes(data: bytes, path_name: str = "<memory>") -> FileInspection:
     for index, offset in enumerate(block_offsets):
         end_offset = block_offsets[index + 1] if index + 1 < len(block_offsets) else len(data)
         zstd_offsets = tuple(
-            position - offset
+            position
             for position in _find_all(data[offset:end_offset], ZSTD_MAGIC)
         )
         blocks.append(
