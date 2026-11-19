@@ -47,7 +47,6 @@ def main() -> int:
 
         print(f"File:              {result.path_name}")
         print(f"Size:              {result.size_bytes:,} bytes")
-        print(f"SHA-256:           {result.sha256}")
         print(f"Magic:             {result.magic!r}")
         print(f"Expected SV2C:     {'yes' if result.has_expected_magic else 'no'}")
         print(f"S2BH candidates:   {result.block_marker_count}")
