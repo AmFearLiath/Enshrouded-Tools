@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shroudtools"
+version = "0.1.0"
+description = "Read-only Enshrouded savegame inspection and research toolkit"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "ShroudTools contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+zstd = ["zstandard>=0.22"]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+shroudtools = "shroudtools.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
