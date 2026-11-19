@@ -10,8 +10,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from pathlib import Path
-import hashlib
-import struct
 
 FILE_MAGIC = b"SV2C"
 BLOCK_MAGIC = b"S2BH"
@@ -26,7 +24,6 @@ class BlockCandidate:
     offset: int
     end_offset: int
     span_size: int
-    header_hex: str
     zstd_frame_offsets: tuple[int, ...]
 
 
@@ -36,7 +33,6 @@ class FileInspection:
 
     path_name: str
     size_bytes: int
-    sha256: str
     magic: str
     has_expected_magic: bool
     block_marker_count: int
@@ -68,9 +64,6 @@ def inspect_bytes(data: bytes, path_name: str = "<memory>") -> FileInspection:
 
     for index, offset in enumerate(block_offsets):
         end_offset = block_offsets[index + 1] if index + 1 < len(block_offsets) else len(data)
-        # Capture a short header window for local format research. The field
-        # meanings are deliberately not decoded at this stage.
-        header = data[offset:min(offset + 64, end_offset)]
         zstd_offsets = tuple(
             position - offset
             for position in _find_all(data[offset:end_offset], ZSTD_MAGIC)
@@ -81,7 +74,6 @@ def inspect_bytes(data: bytes, path_name: str = "<memory>") -> FileInspection:
                 offset=offset,
                 end_offset=end_offset,
                 span_size=end_offset - offset,
-                header_hex=header.hex(),
                 zstd_frame_offsets=zstd_offsets,
             )
         )
@@ -89,7 +81,6 @@ def inspect_bytes(data: bytes, path_name: str = "<memory>") -> FileInspection:
     return FileInspection(
         path_name=Path(path_name).name,
         size_bytes=len(data),
-        sha256=hashlib.sha256(data).hexdigest(),
         magic=data[:4].decode("ascii", errors="replace"),
         has_expected_magic=data.startswith(FILE_MAGIC),
         block_marker_count=len(block_offsets),
