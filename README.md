@@ -2,53 +2,57 @@
 
 **Enshrouded Savegame & World Toolkit**
 
-ShroudTools is an independent, modular toolkit for inspecting Enshrouded savegame files and, as the format becomes understood, extracting structured world and character information.
+ShroudTools is an independent, modular toolkit for inspecting Enshrouded savegame files and, as the format becomes understood, extracting structured world information.
 
-The project begins with a conservative, read-only inspection tool. It does not modify savegames.
+The project begins with conservative, read-only inspection. It does not modify savegames.
 
 ## Data privacy
 
 **Original savegames must never be committed to this repository.**
 
-- Do not add `.ksd` files, backups, character data, world data, or extracted private world content.
+- Do not add .ksd files, backups, character data, world data, or extracted private world content.
 - Keep real savegames in a local, untracked working directory.
 - Use synthetic fixtures for automated tests.
 - Review every commit before publishing it.
 - Do not publish extracted names, coordinates, inventories, player identifiers, or other world-specific data without explicit approval.
 
-The repository contains source code, format research, documentation, and synthetic tests only.
+The repository contains source code, generalized format research, documentation, and synthetic tests only.
 
 ## Current status
 
-The first research target is the world save `world0.ksd`.
+The outer SV2C container format is now mapped sufficiently for read-only directory parsing:
 
-Initial local inspection observed:
+- 48-byte container header with file size, footer offset, and chunk count.
+- 40-byte directory prefix followed by 20-byte chunk entries and a concatenated name area.
+- 14-byte S2BH chunk headers.
+- XXH3-64 low-32-bit chunk checksums.
+- Zstandard compression identified by the chunk type compression flag.
 
-- File signature: `SV2C`.
-- Repeated block marker: `S2BH`.
-- Several Zstandard frame signatures (`28 B5 2F FD`) inside block payloads.
-- A mixture of compressed and non-obviously-compressed payloads.
-
-These are observations from one local sample, not a complete specification of the format. Block type meanings and internal schemas remain under investigation.
+The inner payload schemas are still under investigation. In particular, the entity and base chunk families have not yet been decoded into world objects or transforms.
 
 ## Quick start
 
 Requires Python 3.11+.
 
-```bash
-python -m pip install -e .
-shroudtools inspect /path/to/world0.ksd
-```
+~~~bash
+python -m pip install -e ".[format,dev]"
+shroudtools inspect-container /path/to/world0.ksd
+shroudtools inspect-container /path/to/world0.ksd --json
+~~~
 
-The inspector reports file metadata, recognized signatures, candidate block boundaries, and Zstandard frame boundaries. It does not print or export savegame payload contents.
+The container inspector reports directory metadata and checksum status. It does not print payload contents or world identifiers. The older signature scanner remains available:
+
+~~~bash
+shroudtools inspect /path/to/world0.ksd
+~~~
 
 ## Project structure
 
-```text
+~~~text
 src/shroudtools/       Read-only inspection library and CLI
 docs/                  Format research and architecture notes
 tests/                 Synthetic, non-personal tests
-```
+~~~
 
 ## Development principles
 
